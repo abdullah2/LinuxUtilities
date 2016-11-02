@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Linux Utilities</string>
+    <string name="title_activity_store_configuration">store_configuration</string>
 </resources>
