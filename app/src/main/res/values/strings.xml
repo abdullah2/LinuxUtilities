@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Linux Utilities</string>
+    <string name="title_activity_store_configuration">store_configuration</string>
+
+    <string name="store_configuration_conf_name">Configuration name</string>
+    <string name="store_configuration_host_ip">Host IP address</string>
+    <string name="store_configuration_port">Port</string>
+    <string name="store_configuration_username">Username</string>
+    <string name="store_configuration_password">Password</string>
+    <string name="store_configuration_save">Save</string>
+
+
 </resources>
