@@ -23,6 +23,7 @@ public class store_configuration extends AppCompatActivity {
         final SQLiteDatabase db = openOrCreateDatabase("conf", MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS hosts (name text, host text, port text, username text, password text, primary key(name));");
 
+        //TO BE REMOVED
         //SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         final EditText confName = (EditText) (findViewById(R.id.confName));
@@ -31,7 +32,6 @@ public class store_configuration extends AppCompatActivity {
         final EditText username = (EditText) (findViewById(R.id.username));
         final EditText password = (EditText) (findViewById(R.id.password));
         final Button saveButton = (Button) (findViewById(R.id.saveButton));
-
 
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -42,17 +42,22 @@ public class store_configuration extends AppCompatActivity {
                 String username_string = username.getText().toString();
                 String password_string = password.getText().toString();
 
-                SQLiteStatement stmt = db.compileStatement("INSERT INTO hosts values (?, ?, ?, ?, ?)");
-                stmt.bindString(1, confName_string);
-                stmt.bindString(2, host_string);
-                stmt.bindString(3, port_string);
-                stmt.bindString(4, username_string);
-                stmt.bindString(5, password_string);
-                try{
-                    stmt.execute();
-                }catch (android.database.sqlite.SQLiteConstraintException e){
-                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Configuration name already exists!", Snackbar.LENGTH_LONG);
+                if (confName_string.matches("") || host_string.matches("") || port_string.matches("") || username_string.matches("") || password_string.matches("")) {
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Fill in all of the fields!", Snackbar.LENGTH_LONG);
                     snackbar.show();
+                }else{
+                    SQLiteStatement stmt = db.compileStatement("INSERT INTO hosts values (?, ?, ?, ?, ?)");
+                    stmt.bindString(1, confName_string);
+                    stmt.bindString(2, host_string);
+                    stmt.bindString(3, port_string);
+                    stmt.bindString(4, username_string);
+                    stmt.bindString(5, password_string);
+                    try{
+                        stmt.execute();
+                    }catch (android.database.sqlite.SQLiteConstraintException e){
+                        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Configuration name already exists!", Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                    }
                 }
             }
         });
