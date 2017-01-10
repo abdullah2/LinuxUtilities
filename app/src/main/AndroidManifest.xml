@@ -9,16 +9,22 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".store_configuration"
-            android:label="@string/title_activity_store_configuration"
-            android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:name=".store_configuration">
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+
+        </intent-filter>
         </activity>
-        <activity android:name=".configuration_list"></activity>
+
+
+        <activity android:name=".configuration_list">
+
+
+
+        </activity>
     </application>
 
 </manifest>
