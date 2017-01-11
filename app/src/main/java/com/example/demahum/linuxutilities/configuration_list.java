@@ -30,6 +30,7 @@ public class configuration_list extends ActionBarActivity {
     private ActionBarDrawerToggle mDrawerToggle;
     ListView listView ;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +38,7 @@ public class configuration_list extends ActionBarActivity {
 
         String origin = getIntent().getStringExtra("origin");
         getSupportActionBar().setTitle("Stored configurations");
+
 
         if (origin.matches("new")){
             Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Configuration stored successfully.", Snackbar.LENGTH_LONG);
@@ -62,6 +64,9 @@ public class configuration_list extends ActionBarActivity {
                 do {
                     labels.add(cursor.getString(0));
                 } while (cursor.moveToNext());
+            }else{
+                Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "No configurations found.", Snackbar.LENGTH_LONG);
+                snackbar.show();
             }
             cursor.close();
             db.close();
@@ -91,7 +96,7 @@ public class configuration_list extends ActionBarActivity {
     }
 
     private void addDrawerItems() {
-        String[] osArray = {"Configurations", "New Configuration"};
+        String[] osArray = {"Configurations", "New Configuration", "Execute command"};
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, osArray);
         mDrawerList.setAdapter(mAdapter);
 
@@ -105,6 +110,10 @@ public class configuration_list extends ActionBarActivity {
                 }
                 else if (position == 1){
                     Intent intent = new Intent(getBaseContext(), store_configuration.class);
+                    startActivity(intent);
+                }
+                else if (position == 2){
+                    Intent intent = new Intent(getBaseContext(), execute_command.class);
                     startActivity(intent);
                 }
             }

@@ -2,15 +2,17 @@ package com.example.demahum.linuxutilities;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
-import android.os.Bundle;
+import android.os.AsyncTask;
 
-import android.support.design.widget.Snackbar;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBarDrawerToggle;
-
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -18,74 +20,137 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
-public class store_configuration extends ActionBarActivity {
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
+
+public class execute_command extends AppCompatActivity {
 
     private ListView mDrawerList;
     private DrawerLayout mDrawerLayout;
     private ArrayAdapter<String> mAdapter;
     private ActionBarDrawerToggle mDrawerToggle;
+    public String output;
+    public String command;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_store_configuration);
-
-        getSupportActionBar().setTitle("Store new configuration");
+        setContentView(R.layout.activity_execute_command);
 
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        getSupportActionBar().setTitle("Execute command");
         addDrawerItems();
         setupDrawer();
-
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
+
+        Button configuration = (Button)findViewById(R.id.button);
 
 
         final SQLiteDatabase db = openOrCreateDatabase("conf", MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS hosts (name text, host text, port text, username text, password text, primary key(name));");
-
-        //TO BE REMOVED
-        //SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-        final EditText confName = (EditText) (findViewById(R.id.confName));
-        final EditText hostIP = (EditText) (findViewById(R.id.host_ip));
-        final EditText port = (EditText) (findViewById(R.id.port));
-        final EditText username = (EditText) (findViewById(R.id.username));
-        final EditText password = (EditText) (findViewById(R.id.password));
-        final Button saveButton = (Button) (findViewById(R.id.saveButton));
-
-        saveButton.setOnClickListener(new View.OnClickListener() {
+        Cursor cursor = db.rawQuery("SELECT name FROM hosts limit 1;", null);
+        if (cursor.moveToFirst()) {
+            do {
+                configuration.setText(cursor.getString(0));
+                configuration.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(getBaseContext(), configuration_list.class);
+                        intent.putExtra("origin", "old");
+                        startActivity(intent);
+                    }
+                });
+            } while (cursor.moveToNext());
+        }else{
+                configuration.setText(R.string.add_config);
+                configuration.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(getBaseContext(), store_configuration.class);
+                        startActivity(intent);
+                    }
+                });
+        }
+        cursor.close();
+        db.close();
+        final TextView response = (TextView)findViewById(R.id.textView);
+        final Button execute = (Button)findViewById(R.id.button2);
+        final EditText editText = (EditText)findViewById(R.id.editText);
+        output = "empty";
+        execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String confName_string = confName.getText().toString();
-                String host_string = hostIP.getText().toString();
-                String port_string = port.getText().toString();
-                String username_string = username.getText().toString();
-                String password_string = password.getText().toString();
+                command = editText.getText().toString();
+                new AsyncTask<Integer, Void, Void>(){
+                    @Override
+                    protected Void doInBackground(Integer... params) {
+                        try {
+                             output = executeRemoteCommand("muhamed", "secured","192.168.2.31", 22, command);
+                             this.publishProgress();
 
-                if (confName_string.matches("") || host_string.matches("") || port_string.matches("") || username_string.matches("") || password_string.matches("")) {
-                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Fill in all of the fields!", Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                }else{
-                    SQLiteStatement stmt = db.compileStatement("INSERT INTO hosts values (?, ?, ?, ?, ?)");
-                    stmt.bindString(1, confName_string);
-                    stmt.bindString(2, host_string);
-                    stmt.bindString(3, port_string);
-                    stmt.bindString(4, username_string);
-                    stmt.bindString(5, password_string);
-                    try{
-                        stmt.execute();
-                        Intent intent = new Intent(getBaseContext(), configuration_list.class);
-                        intent.putExtra("origin", "new");
-                        startActivity(intent);
-                    }catch (android.database.sqlite.SQLiteConstraintException e){
-                        Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Configuration name already exists!", Snackbar.LENGTH_LONG);
-                        snackbar.show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        return null;
                     }
-                }
+
+                    protected void onProgressUpdate(Void...values) {
+                        response.setText(output);
+                    }
+
+
+
+                }.execute(1);
             }
+
         });
+
+        response.setText(output);
+
+
+
+    }
+
+    public static String executeRemoteCommand(String username,String password,String hostname,int port, String command)
+            throws Exception {
+
+        JSch jsch = new JSch();
+        Session session = jsch.getSession(username, hostname, port);
+        session.setPassword(password);
+
+        // Avoid asking for key confirmation
+        Properties prop = new Properties();
+        prop.put("StrictHostKeyChecking", "no");
+        session.setConfig(prop);
+
+        session.connect();
+
+        // SSH Channel
+        ChannelExec channelssh = (ChannelExec)
+                session.openChannel("exec");
+
+        InputStream inputStream = channelssh.getInputStream();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+        // Execute command
+        channelssh.setCommand(command);
+        channelssh.connect();
+
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            stringBuilder.append(line);
+            stringBuilder.append('\n');
+        }
+        channelssh.disconnect();
+        return stringBuilder.toString();
     }
 
     private void addDrawerItems() {
@@ -126,12 +191,9 @@ public class store_configuration extends ActionBarActivity {
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
 
-            /**
-             * Called when a drawer has settled in a completely closed state.
-             */
             public void onDrawerClosed(View view) {
                 super.onDrawerClosed(view);
-                getSupportActionBar().setTitle("Stored configurations");
+                getSupportActionBar().setTitle("Execute command");
                 invalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
             }
         };
@@ -143,7 +205,7 @@ public class store_configuration extends ActionBarActivity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
+
         mDrawerToggle.syncState();
     }
 
@@ -156,21 +218,17 @@ public class store_configuration extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
 
-        // Activate the navigation drawer toggle
         if (mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 }
