@@ -11,7 +11,7 @@
         android:theme="@style/AppTheme">
 
         <activity android:name=".store_configuration">
-
+            android:windowSoftInputMode="adjustPan"
         </activity>
         <activity android:name=".configuration_list"></activity>
         <activity android:name=".execute_command">

@@ -41,6 +41,12 @@ public class execute_command extends AppCompatActivity {
     public String output;
     public String command;
 
+    public String name;
+    public String ip;
+    public String port;
+    public String username;
+    public String password;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +54,16 @@ public class execute_command extends AppCompatActivity {
 
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        Boolean start = Boolean.TRUE;
+
+            name = getIntent().getStringExtra("name");
+            ip = getIntent().getStringExtra("ip");
+            port = getIntent().getStringExtra("port");
+            username = getIntent().getStringExtra("username");
+            password = getIntent().getStringExtra("password");
+
+
         getSupportActionBar().setTitle("Execute command");
         addDrawerItems();
         setupDrawer();
@@ -59,20 +75,23 @@ public class execute_command extends AppCompatActivity {
 
         final SQLiteDatabase db = openOrCreateDatabase("conf", MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS hosts (name text, host text, port text, username text, password text, primary key(name));");
-        Cursor cursor = db.rawQuery("SELECT name FROM hosts limit 1;", null);
-        if (cursor.moveToFirst()) {
-            do {
-                configuration.setText(cursor.getString(0));
-                configuration.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(getBaseContext(), configuration_list.class);
-                        intent.putExtra("origin", "old");
-                        startActivity(intent);
-                    }
-                });
-            } while (cursor.moveToNext());
-        }else{
+
+        if (name == null) {
+
+            Cursor cursor = db.rawQuery("SELECT name FROM hosts limit 1;", null);
+            if (cursor.moveToFirst()) {
+                do {
+                    configuration.setText(cursor.getString(0));
+                    configuration.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(getBaseContext(), configuration_list.class);
+                            intent.putExtra("origin", "old");
+                            startActivity(intent);
+                        }
+                    });
+                } while (cursor.moveToNext());
+            } else {
                 configuration.setText(R.string.add_config);
                 configuration.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -81,9 +100,14 @@ public class execute_command extends AppCompatActivity {
                         startActivity(intent);
                     }
                 });
+            }
+            cursor.close();
+        }else{
+            configuration.setText(R.string.execute_button);
         }
-        cursor.close();
+
         db.close();
+
         final TextView response = (TextView)findViewById(R.id.textView);
         final Button execute = (Button)findViewById(R.id.button2);
         final EditText editText = (EditText)findViewById(R.id.editText);
@@ -97,7 +121,6 @@ public class execute_command extends AppCompatActivity {
             }
                                  });
 
-        output = "empty";
         execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -122,18 +145,10 @@ public class execute_command extends AppCompatActivity {
                     protected void onProgressUpdate(Void...values) {
                         response.setText(output);
                     }
-
-
-
                 }.execute(1);
             }
 
         });
-
-        response.setText(output);
-
-
-
     }
 
     public static String executeRemoteCommand(String username,String password,String hostname,int port, String command)

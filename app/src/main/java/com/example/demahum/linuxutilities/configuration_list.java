@@ -30,6 +30,8 @@ public class configuration_list extends ActionBarActivity {
     private ActionBarDrawerToggle mDrawerToggle;
     ListView listView ;
 
+    public String name;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,18 +80,41 @@ public class configuration_list extends ActionBarActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String name = "";
+                String ip = "";
+                String port = "";
+                String username = "";
+                String password = "";
 
-                int itemPosition     = position;
+                String itemValue = (String)listView.getItemAtPosition(position);
+                final SQLiteDatabase db = openOrCreateDatabase("conf", MODE_PRIVATE, null);
+                Cursor cursor = db.rawQuery("select * from hosts where name = '" + itemValue + "';", null);
+                if (cursor.moveToFirst()) {
+                    do {
+                        name = cursor.getString(0);
+                        ip = cursor.getString(1);
+                        port = cursor.getString(2);
+                        username = cursor.getString(3);
+                        password = cursor.getString(4);
+                    } while (cursor.moveToNext());
+                }else{
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "Sorry, something went wrong with the app. Please, report to the author.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                }
+                cursor.close();
+                db.close();
 
-                // ListView Clicked item value
-                String  itemValue    = (String) listView.getItemAtPosition(position);
+                Intent intent = new Intent(getBaseContext(), execute_command.class);
+                intent.putExtra("name", name);
+                intent.putExtra("ip", ip);
+                intent.putExtra("port", port);
+                intent.putExtra("username", username);
+                intent.putExtra("password", password);
+                startActivity(intent);
 
                 // Show Alert
-                Toast.makeText(getApplicationContext(),
-                        "Position :"+itemPosition+"  ListItem : " +itemValue , Toast.LENGTH_LONG)
-                        .show();
+                Toast.makeText(getApplicationContext(), itemValue , Toast.LENGTH_LONG).show();
             }
         });
 
