@@ -1,9 +1,12 @@
 package com.example.demahum.linuxutilities;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.hardware.input.InputManager;
 import android.os.AsyncTask;
 
 import com.jcraft.jsch.ChannelExec;
@@ -15,6 +18,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -82,10 +87,23 @@ public class execute_command extends AppCompatActivity {
         final TextView response = (TextView)findViewById(R.id.textView);
         final Button execute = (Button)findViewById(R.id.button2);
         final EditText editText = (EditText)findViewById(R.id.editText);
+        final Button clear = (Button)findViewById(R.id.button3);
+
+
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                editText.setText("");
+            }
+                                 });
+
         output = "empty";
         execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
                 command = editText.getText().toString();
                 new AsyncTask<Integer, Void, Void>(){
                     @Override
