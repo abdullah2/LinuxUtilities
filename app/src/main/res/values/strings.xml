@@ -13,6 +13,7 @@
     <string name="add_config">Add new configuration</string>
     <string name="execute_hint">Enter a command</string>
     <string name="execute_button">Execute</string>
+    <string name="clear_button">Clear</string>
 
 
 </resources>

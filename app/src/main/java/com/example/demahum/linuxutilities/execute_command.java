@@ -1,20 +1,27 @@
 package com.example.demahum.linuxutilities;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.hardware.input.InputManager;
 import android.os.AsyncTask;
 
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -36,6 +43,12 @@ public class execute_command extends AppCompatActivity {
     public String output;
     public String command;
 
+    public String name;
+    public String ip;
+    public String port;
+    public String username;
+    public String password;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +56,16 @@ public class execute_command extends AppCompatActivity {
 
         mDrawerList = (ListView)findViewById(R.id.navList);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+
+        Boolean start = Boolean.TRUE;
+
+            name = getIntent().getStringExtra("name");
+            ip = getIntent().getStringExtra("ip");
+            port = getIntent().getStringExtra("port");
+            username = getIntent().getStringExtra("username");
+            password = getIntent().getStringExtra("password");
+
+
         getSupportActionBar().setTitle("Execute command");
         addDrawerItems();
         setupDrawer();
@@ -54,20 +77,23 @@ public class execute_command extends AppCompatActivity {
 
         final SQLiteDatabase db = openOrCreateDatabase("conf", MODE_PRIVATE, null);
         db.execSQL("CREATE TABLE IF NOT EXISTS hosts (name text, host text, port text, username text, password text, primary key(name));");
-        Cursor cursor = db.rawQuery("SELECT name FROM hosts limit 1;", null);
-        if (cursor.moveToFirst()) {
-            do {
-                configuration.setText(cursor.getString(0));
-                configuration.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Intent intent = new Intent(getBaseContext(), configuration_list.class);
-                        intent.putExtra("origin", "old");
-                        startActivity(intent);
-                    }
-                });
-            } while (cursor.moveToNext());
-        }else{
+
+        if (name == null) {
+
+            Cursor cursor = db.rawQuery("SELECT name FROM hosts limit 1;", null);
+            if (cursor.moveToFirst()) {
+                do {
+                    configuration.setText(cursor.getString(0));
+                    configuration.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(getBaseContext(), configuration_list.class);
+                            intent.putExtra("origin", "old");
+                            startActivity(intent);
+                        }
+                    });
+                } while (cursor.moveToNext());
+            } else {
                 configuration.setText(R.string.add_config);
                 configuration.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -76,46 +102,72 @@ public class execute_command extends AppCompatActivity {
                         startActivity(intent);
                     }
                 });
+            }
+            cursor.close();
+        }else{
+            configuration.setText(name);
+            configuration.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getBaseContext(), configuration_list.class);
+                    intent.putExtra("origin", "old");
+                    startActivity(intent);
+                }
+            });
         }
-        cursor.close();
+
         db.close();
+
         final TextView response = (TextView)findViewById(R.id.textView);
         final Button execute = (Button)findViewById(R.id.button2);
         final EditText editText = (EditText)findViewById(R.id.editText);
-        output = "empty";
-        execute.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                command = editText.getText().toString();
-                new AsyncTask<Integer, Void, Void>(){
-                    @Override
-                    protected Void doInBackground(Integer... params) {
-                        try {
-                             output = executeRemoteCommand("muhamed", "secured","192.168.2.31", 22, command);
-                             this.publishProgress();
+        final Button clear = (Button)findViewById(R.id.button3);
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
+
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                editText.setText("");
+            }
+                                 });
+        if (ip == null){
+            execute.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "No configurations found. Please, create at least one.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                }
+            });
+        }else {
+            execute.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+
+                    command = editText.getText().toString();
+                    new AsyncTask<Integer, Void, Void>() {
+                        @Override
+                        protected Void doInBackground(Integer... params) {
+                            try {
+                                output = executeRemoteCommand(username, password, ip, Integer.parseInt(port), command);
+                                this.publishProgress();
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            return null;
                         }
 
-                        return null;
-                    }
+                        protected void onProgressUpdate(Void... values) {
+                            response.setText(output);
+                        }
+                    }.execute(1);
+                }
 
-                    protected void onProgressUpdate(Void...values) {
-                        response.setText(output);
-                    }
-
-
-
-                }.execute(1);
-            }
-
-        });
-
-        response.setText(output);
-
-
-
+            });
+        }
     }
 
     public static String executeRemoteCommand(String username,String password,String hostname,int port, String command)

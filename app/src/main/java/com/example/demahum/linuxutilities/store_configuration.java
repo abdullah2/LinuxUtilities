@@ -86,6 +86,7 @@ public class store_configuration extends ActionBarActivity {
                 }
             }
         });
+        confName.requestFocus();
     }
 
     private void addDrawerItems() {
