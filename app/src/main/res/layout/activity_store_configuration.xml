@@ -33,7 +33,7 @@
         <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName"
+            android:inputType="number"
             android:hint="@string/store_configuration_port"
             android:ems="10"
             android:id="@+id/port"

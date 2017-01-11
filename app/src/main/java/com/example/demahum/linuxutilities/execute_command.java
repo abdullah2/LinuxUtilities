@@ -12,6 +12,8 @@ import android.os.AsyncTask;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -103,7 +105,15 @@ public class execute_command extends AppCompatActivity {
             }
             cursor.close();
         }else{
-            configuration.setText(R.string.execute_button);
+            configuration.setText(name);
+            configuration.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getBaseContext(), configuration_list.class);
+                    intent.putExtra("origin", "old");
+                    startActivity(intent);
+                }
+            });
         }
 
         db.close();
@@ -120,35 +130,44 @@ public class execute_command extends AppCompatActivity {
                 editText.setText("");
             }
                                  });
+        if (ip == null){
+            execute.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Snackbar snackbar = Snackbar.make(findViewById(android.R.id.content), "No configurations found. Please, create at least one.", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                }
+            });
+        }else {
+            execute.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
 
-        execute.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+                    command = editText.getText().toString();
+                    new AsyncTask<Integer, Void, Void>() {
+                        @Override
+                        protected Void doInBackground(Integer... params) {
+                            try {
+                                output = executeRemoteCommand(username, password, ip, Integer.parseInt(port), command);
+                                this.publishProgress();
 
-                command = editText.getText().toString();
-                new AsyncTask<Integer, Void, Void>(){
-                    @Override
-                    protected Void doInBackground(Integer... params) {
-                        try {
-                             output = executeRemoteCommand("muhamed", "secured","192.168.2.31", 22, command);
-                             this.publishProgress();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
 
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            return null;
                         }
 
-                        return null;
-                    }
+                        protected void onProgressUpdate(Void... values) {
+                            response.setText(output);
+                        }
+                    }.execute(1);
+                }
 
-                    protected void onProgressUpdate(Void...values) {
-                        response.setText(output);
-                    }
-                }.execute(1);
-            }
-
-        });
+            });
+        }
     }
 
     public static String executeRemoteCommand(String username,String password,String hostname,int port, String command)

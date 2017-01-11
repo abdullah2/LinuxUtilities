@@ -112,9 +112,6 @@ public class configuration_list extends ActionBarActivity {
                 intent.putExtra("username", username);
                 intent.putExtra("password", password);
                 startActivity(intent);
-
-                // Show Alert
-                Toast.makeText(getApplicationContext(), itemValue , Toast.LENGTH_LONG).show();
             }
         });
 
