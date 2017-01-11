@@ -10,5 +10,9 @@
     <string name="store_configuration_save">Save</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
+    <string name="add_config">Add new configuration</string>
+    <string name="execute_hint">Enter a command</string>
+    <string name="execute_button">Execute</string>
+
 
 </resources>
